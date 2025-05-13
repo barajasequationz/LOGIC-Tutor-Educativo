@@ -8,6 +8,7 @@
 #include <string>
 #include <limits>
 #include <cstdlib>
+#include <fstream>
 
 
 using namespace std;
@@ -147,16 +148,7 @@ void menuUsuario(){
     cout << "Seleccione una opcion: " ;
 }
 
-int buscarUsuario(const string& nombre, const vector<Usuario>& usuarios){
-	int indice = 0;
-    for(const auto& c : usuarios){
-        if(c.getNombre() == nombre){
-			return indice;
-		}
-		indice++;
-	}
-	return -1;
-}
+
 
 
 
@@ -165,37 +157,55 @@ int main(){
     int opcion = 0;
     int opcionUsuario = 0;
 
-    vector<Usuario> usuarios;
-
     do{
     menu();
     cin >> opcion;
     cin.ignore();
-    string nombre;
-    int indiceUsuario = 0;
     
+    string nombre;
+    string linea;
     switch(opcion){
-            case 1: {
-                cout << "Ingrese su nombre: ";
-                getline(cin, nombre);
-        
-                for(const auto & c : usuarios){
-                    if (c.getNombre() != nombre) {
-                        usuarios.emplace_back(nombre);
-                        cout << "Usuario registrado con exito " << endl;
-                    }else{
-                        cout << "Este usuario ya existe" << endl;
+         case 1: {
+            cout << "Ingrese su nombre: ";
+            getline(cin, nombre);
+                
+            fstream archivo("usuarios.txt", ios::in); //ios::in para leer el archivo
+            bool existe = false;
+            string linea;
+
+            if (archivo.is_open()) {
+                while (getline(archivo, linea)) {
+                    if (linea == nombre) {
+                        existe = true;
+                        break;
+                        }
                     }
-                }
-            break;
-            } 
+                    archivo.close();
+                    } else {
+                        cout << "Error al abrir el archivo" << endl;
+                    return 0;
+                    }
+                    if (existe) {
+                        cout << "El usuario ya existe" << endl;
+                    } else {
+                        //archivoOut es una instancia de fstream para escribir en el archivo
+                        ofstream archivoOut("usuarios.txt", ios::app); //ios::app para agregar al final del archivo
+                        if (archivoOut.is_open()) {
+                            archivoOut << nombre << endl;
+                            archivoOut.close();
+                            cout << "Usuario creado exitosamente" << endl;
+                        } else {
+                            cout << "Error al escribir en el archivo" << endl;
+                        }
+                    }
+                    break;
+                } 
             
             case 2: {
                 cout << "Inicio de sesion" << endl;
                 cout << "Ingrese su nombre: ";
                 getline(cin, nombre);
                
-                indiceUsuario = buscarUsuario(nombre, usuarios);
                 cout << "Inicio de sesion exitoso" << endl;
 
             
@@ -204,7 +214,7 @@ int main(){
                     menuUsuario();
                     cin >> opcionUsuario;
                     cin.ignore();
-                    cout << "indice" << indiceUsuario << endl;
+         
 
                     }while (opcionUsuario != 3);
                  }
