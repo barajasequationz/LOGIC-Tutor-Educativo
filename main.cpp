@@ -2,13 +2,13 @@
 //Karim Herrera, Montse Sanchez, Sergio Barajas Jr.
 
 
-#include <iostream>
-#include <vector>
-#include <iomanip>
-#include <string>
-#include <limits>
-#include <cstdlib>
-#include <fstream>
+#include <iostream> 
+#include <vector> //para manejar vectores
+#include <iomanip> //para setprecision
+#include <string> 
+#include <limits> //para manejar errores de entrada
+#include <cstdlib> 
+#include <fstream> // Para manejar archivos
 
 
 using namespace std;
@@ -156,7 +156,7 @@ int main(){
     cout << "LOGIC TUTOR EDUCATIVO" << endl;
     int opcion = 0;
     int opcionUsuario = 0;
-
+    string nombre, password, password2, linea;
     do{
     menu();
     cin >> opcion;
@@ -165,70 +165,106 @@ int main(){
     string nombre;
     string linea;
     switch(opcion){
-         case 1: {
+     
+        case 1: {  
+            cout << "Nuevo usuario" << endl;
             cout << "Ingrese su nombre: ";
             getline(cin, nombre);
-                
-            fstream archivo("usuarios.txt", ios::in); //ios::in para leer el archivo
-            bool existe = false;
-            string linea;
 
-            if (archivo.is_open()) {
-                while (getline(archivo, linea)) {
-                    if (linea == nombre) {
+           
+            ifstream archivoIn("usuarios.txt");  // abrir el archivo en modo lectura y comprobar si el usuario ya existe
+            bool existe = false;
+            if (archivoIn.is_open()) {
+                while (getline(archivoIn, linea)) {
+                    size_t pos = linea.find(':');          // ya que separaremos el nombre y la contraseña con ':', usamos esto para encontrar la posición
+                    string usuarioExistente;
+                    if (pos != string::npos) { 
+                        usuarioExistente = linea.substr(0, pos); //si se encuentra ':', separamos el nombre y la contraseña
+                    } else {
+                        usuarioExistente = linea; // si no se encuentra ':' se asume que la línea es solo el nombre
+                    }
+                    if (usuarioExistente == nombre) {   // si el nombre ingresado coincide con el nombre existente en el archivo
                         existe = true;
                         break;
-                        }
                     }
-                    archivo.close();
+                }
+                archivoIn.close();
+            } else {
+                cout << "Error al abrir usuarios.txt para lectura" << endl;
+                return 1;
+            }
+
+            if (existe) {
+                cout << "El usuario ya existe" << endl;
+            } else {
+                // pedimos y confirmamos contraseña
+                cout << "Ingrese una contraseña: ";
+                getline(cin, password);
+                cout << "Confirme la contraseña: ";
+                getline(cin, password2);
+
+                if (password != password2) {
+                    cout << "Las contraseñas no coinciden, vuelva a intentarlo" << endl;
+                } else {
+                    ofstream archivoOut("usuarios.txt", ios::app);
+                    if (archivoOut.is_open()) {
+                        archivoOut << nombre << ':' << password << endl; // guardamos el nombre y la contraseña separados por ':'
+                        archivoOut.close();
+                        cout << "Usuario creado exitosamente" << endl;
                     } else {
                         cout << "Error al abrir el archivo" << endl;
-                    return 0;
                     }
-                    if (existe) {
-                        cout << "El usuario ya existe" << endl;
-                    } else {
-                        //archivoOut es una instancia de fstream para escribir en el archivo
-                        ofstream archivoOut("usuarios.txt", ios::app); //ios::app para agregar al final del archivo
-                        if (archivoOut.is_open()) {
-                            archivoOut << nombre << endl;
-                            archivoOut.close();
-                            cout << "Usuario creado exitosamente" << endl;
-                        } else {
-                            cout << "Error al escribir en el archivo" << endl;
-                        }
-                    }
-                    break;
-                } 
-            
-            case 2: {
-                cout << "Inicio de sesion" << endl;
-                cout << "Ingrese su nombre: ";
-                getline(cin, nombre);
-               
-                cout << "Inicio de sesion exitoso" << endl;
+                }
+            }
+            break;
+        }
 
-            
+        case 2: {  
+            cout << "Iniciar sesion" << endl;
+            cout << "Ingrese su nombre: ";
+            getline(cin, nombre);
+            cout << "Ingrese su contraseña: ";
+            getline(cin, password);
+
+            ifstream archivoIn("usuarios.txt");
+            bool coincide = false;
+            if (archivoIn.is_open()) {
+                while (getline(archivoIn, linea)) {
+                    size_t pos = linea.find(':');
+                    if (pos == string::npos) continue;                    // si no se encuentra ':', continuamos con la siguiente línea
+                    string usuarioExistente = linea.substr(0, pos);              //misma lógica que antes, se busca el nombre y la contraseña
+                    string passExistente   = linea.substr(pos + 1);
+                    if (usuarioExistente == nombre && passExistente == password) { // si el nombre y la contraseña coinciden, el bool coincide se vuelve true
+                        coincide = true;
+                        break;
+                    }
+                }
+                archivoIn.close();
+            } else {
+                cout << "Error al abrir el archivo" << endl;
+                return 0;
+            }
+
+            if (coincide) {
+                cout << "Inicio de sesion exitoso, bienvenido " << nombre << "!" << endl;
+            } else {
+                cout << "Usuario o contraseña incorrectos" << endl;
+            }
+            break;
+        }
 
                 do{
                     menuUsuario();
                     cin >> opcionUsuario;
                     cin.ignore();
-         
+                        
 
                     }while (opcionUsuario != 3);
                  }
                 
-            }
+            }while (opcion != 3);
            
 
     
-    }while (opcion != 3);
-    
     }
-
-
-
-
-
-
+    
