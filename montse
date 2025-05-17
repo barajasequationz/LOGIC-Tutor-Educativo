@@ -38,7 +38,7 @@ class Ejercicio {
             return respuesta;
         }
 
-        virtual void mostrarEjercicio() const {
+        virtual void mostrarEjercicio() const { 
             cout << "Dificultad: " << Ejercicio::getDificultad() << endl;
             cout << Ejercicio::getEnunciado() << endl; 
         }
@@ -47,16 +47,17 @@ class Ejercicio {
 
 class Historial {
     private: 
-    double promedio;
-    int respuestasCorrectas;
-    int respuestasIncorrectas;
+    double promedio = 0.0;
+    int respuestasCorrectas = 0;
+    int respuestasIncorrectas  = 0;
+    public:
 
+    
     Historial (int respuestasCorrectas, int respuestasIncorrectas, double promedio) {
         this->respuestasCorrectas = respuestasCorrectas;
         this->respuestasIncorrectas = respuestasIncorrectas;
         this->promedio = promedio;
     }
-    public:
     
     double getPromedio() const {
         return promedio;
@@ -288,3 +289,4 @@ int main(){
 
     
     }
+    
