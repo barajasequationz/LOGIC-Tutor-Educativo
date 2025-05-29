@@ -8,9 +8,9 @@
 #include <limits> //para manejar errores de entrada
 #include <cstdlib> 
 #include <fstream> // Para manejar archivos
-#include <algorithm>  // para std::shuffle
-#include <random>     // para std::default_random_engine
-#include <chrono>     // para seed del reloj
+#include <algorithm> // para std::shuffle
+#include <random> // para std::default_random_engine
+#include <chrono> // para seed del reloj
 
 
 using namespace std;
@@ -42,6 +42,22 @@ class Ejercicio {
         }
         string getRespuesta() {
             return respuesta;
+        }
+
+        //funcion para validar la respuesta del usuario 
+        bool validarRespuesta(const string& usuario) {
+            return usuario == respuesta;
+        }
+
+        // polimorfismo estatico:
+        // Sobrecarga: para validar la respuesta del usuario ignorando mayusculas y minusculas
+        bool validarRespuesta(const string& usuario, bool ignorarMayusculas) {
+            if (!ignorarMayusculas) return usuario == respuesta;
+
+            string userLower = usuario, respLower = respuesta;
+            transform(userLower.begin(), userLower.end(), userLower.begin(), ::tolower);
+            transform(respLower.begin(), respLower.end(), respLower.begin(), ::tolower);
+            return userLower == respLower;
         }
 
 };
@@ -90,6 +106,38 @@ class Historial {
         cout << "Respuestas incorrectas: " << respuestasIncorrectas << endl;
         cout << "Promedio: " << fixed << setprecision(2) << promedio << "%" << endl;
     }
+    //Guardar historial en un archivo
+   void guardarHistorial(const string& nombreUsuario) const {
+    ofstream archivo("historial_general.txt", ios::app); // archivo único
+    if (archivo.is_open()) {
+        archivo << nombreUsuario << ',' << respuestasCorrectas << ',' << respuestasIncorrectas << ',' << promedio << endl;
+        archivo.close();
+    } else {
+        cout << "Error al abrir el archivo de historial general" << endl;
+    }
+}
+
+   void cargarHistorialGeneral(const string& nombreUsuario) {
+    ifstream archivo("historial_general.txt");
+    if (archivo.is_open()) {
+        string linea;
+        while (getline(archivo, linea)) {
+            stringstream ss(linea);
+            string nombre;
+            getline(ss, nombre, ',');
+            if (nombre == nombreUsuario) {
+                string correctas, incorrectas, prom;
+                getline(ss, correctas, ',');
+                getline(ss, incorrectas, ',');
+                getline(ss, prom, ',');
+                respuestasCorrectas = stoi(correctas);
+                respuestasIncorrectas = stoi(incorrectas);
+                promedio = stod(prom);
+            }
+        }
+        archivo.close();
+    }
+}
 };
 
 class Usuario {
@@ -354,6 +402,7 @@ int main(){
 
                     if (coincide) {
                         cout << "Inicio de sesion exitoso, bienvenido " << nombre << "!" << endl;
+                        usuario.getHistorial().cargarHistorialGeneral(usuario.getNombre());
                     } else {
                         cout << "Usuario o contraseña incorrectos" << endl;
                         break;
@@ -373,6 +422,7 @@ int main(){
                          switch (opcionUsuario){
                             case 1: {
                                 cout << "Ejercicios" << endl;
+                                cout << "Escriba '#' para salir de los ejercicios" << endl;
                                 cout << "1. Aritmetica" << endl;
                                 cout << "2. Logica" << endl;
                                 cout << "3. Combinado " << endl;
@@ -395,56 +445,101 @@ int main(){
                                     if (dificultad == 1) {
                                         vector<EjercicioAritmetica*> ejercicios = obtenerEjerciciosFacilAritmetica();
                                         shuffle(ejercicios.begin(), ejercicios.end(),default_random_engine(chrono::system_clock::now().time_since_epoch().count()));
+
+                                        int contador = 1; // Contador para el número de ejercicios
                                         for (auto* e : ejercicios) {
+                                        cout << "Ejercicio # " << (contador++) << endl;
                                         e->mostrarEjercicio();
                                         string resp;
-                                        cout << "Tu respuesta: ";
-                                        getline(cin, resp);
-                                        if (resp == e->getRespuesta()) {
+                                        do {
+                                            cout << "Tu respuesta: ";
+                                            getline(cin, resp);
+                                            if (resp.empty()) {
+                                                cout << "No puedes dejar la respuesta vacía. Intenta de nuevo." << endl;
+                                            } else if (resp == "#") {
+                                                break;
+                                            }
+                                        } while (resp.empty());
+
+                                        if (resp == "#") {
+                                            break; // salir del bucle de ejercicios
+                                        } else if (e->validarRespuesta(resp)) {
                                             cout << "Correcto!" << endl;
                                             usuario.getHistorial().agregarRespuestaCorrecta();
                                         } else {
                                             cout << "Incorrecto. La respuesta era: " << e->getRespuesta() << endl;
                                             usuario.getHistorial().agregarRespuestaIncorrecta();
-                                            }
+                                        }
+
                                         }
                                         usuario.getHistorial().calcularPromedio();
+                                        usuario.getHistorial().guardarHistorial(usuario.getNombre());
+
                                         for (auto* e : ejercicios) delete e;
                                         } else if (dificultad == 2) {
                                             vector<EjercicioAritmetica*> ejercicios = obtenerEjerciciosIntermedioAritmetica();
                                             shuffle(ejercicios.begin(), ejercicios.end(), default_random_engine(chrono::system_clock::now().time_since_epoch().count()));
+                                            int contador = 1; // Contador para el número de ejercicios
                                             for (auto* e : ejercicios) {
+                                                cout << "Ejercicio # " << (contador++) << endl;
                                                 e->mostrarEjercicio();
                                                 string resp;
-                                                cout << "Tu respuesta: ";
-                                                getline(cin, resp);
-                                                if (resp == e->getRespuesta()) {
+                                                do {
+                                                    cout << "Tu respuesta: ";
+                                                    getline(cin, resp);
+                                                    if (resp.empty()) {
+                                                        cout << "No puedes dejar la respuesta vacía. Intenta de nuevo." << endl;
+                                                    } else if (resp == "#") {
+                                                        break;
+                                                    }
+                                                } while (resp.empty());
+
+                                                if (resp == "#") {
+                                                    break; // salir del bucle de ejercicios
+                                                } else if (e->validarRespuesta(resp)) {
                                                     cout << "Correcto!" << endl;
                                                     usuario.getHistorial().agregarRespuestaCorrecta();
                                                 } else {
                                                     cout << "Incorrecto. La respuesta era: " << e->getRespuesta() << endl;
                                                     usuario.getHistorial().agregarRespuestaIncorrecta();
                                                 }
-                                            }
-                                            usuario.getHistorial().calcularPromedio();
-                                            for (auto* e : ejercicios) delete e;
-                                            } else if (dificultad == 3) {
-                                                vector<EjercicioAritmetica*> ejercicios = obtenerEjerciciosDificilAritmetica();
-                                                shuffle(ejercicios.begin(), ejercicios.end(), default_random_engine(chrono::system_clock::now().time_since_epoch().count()));
-                                                for (auto* e : ejercicios) {
-                                                    e->mostrarEjercicio();
-                                                    string resp;
-                                                    cout << "Tu respuesta: ";
-                                                    getline(cin, resp);
-                                                    if (resp == e->getRespuesta()) {
-                                                        cout << "Correcto!" << endl;
-                                                        usuario.getHistorial().agregarRespuestaCorrecta();
-                                                    } else {
-                                                        cout << "Incorrecto. La respuesta era: " << e->getRespuesta() << endl;
-                                                        usuario.getHistorial().agregarRespuestaIncorrecta();
-                                                    }
+
                                                 }
                                                 usuario.getHistorial().calcularPromedio();
+                                                usuario.getHistorial().guardarHistorial(usuario.getNombre());
+
+                                                for (auto* e : ejercicios) delete e;
+                                                } else if (dificultad == 3) {
+                                                    vector<EjercicioAritmetica*> ejercicios = obtenerEjerciciosDificilAritmetica();
+                                                    shuffle(ejercicios.begin(), ejercicios.end(), default_random_engine(chrono::system_clock::now().time_since_epoch().count()));
+                                                    int contador = 1; // Contador para el número de ejercicios
+                                                    for (auto* e : ejercicios) {
+                                                        cout << "Ejercicio # " << (contador++) << endl;
+                                                        e->mostrarEjercicio();
+                                                        string resp;
+                                                        do {
+                                                            cout << "Tu respuesta: ";
+                                                            getline(cin, resp);
+                                                            if (resp.empty()) {
+                                                                cout << "No puedes dejar la respuesta vacía. Intenta de nuevo." << endl;
+                                                            } else if (resp == "#") {
+                                                                break;
+                                                            }
+                                                        } while (resp.empty());
+
+                                                        if (resp == "#") {
+                                                            break; // salir del bucle de ejercicios
+                                                        } else if (e->validarRespuesta(resp)) {
+                                                            cout << "Correcto!" << endl;
+                                                            usuario.getHistorial().agregarRespuestaCorrecta();
+                                                        } else {
+                                                            cout << "Incorrecto. La respuesta era: " << e->getRespuesta() << endl;
+                                                            usuario.getHistorial().agregarRespuestaIncorrecta();
+                                                        }
+
+                                                    }
+                                                usuario.getHistorial().calcularPromedio();
+                                                usuario.getHistorial().guardarHistorial(usuario.getNombre());
                                                 for (auto* e : ejercicios) delete e;
                                             }
 
@@ -461,62 +556,105 @@ int main(){
                                                     if (dificultad == 1) {
                                                         vector<EjercicioLogica*> ejercicios = obtenerEjerciciosFacilLogica();
                                                         shuffle(ejercicios.begin(), ejercicios.end(), default_random_engine(chrono::system_clock::now().time_since_epoch().count()));
+                                                        int contador = 1; // Contador para el número de ejercicios
                                                         for (auto* e : ejercicios) {
+                                                            cout << "Ejercicio # " << (contador++) << endl;
                                                             e->mostrarEjercicio();
                                                             string resp;
-                                                            cout << "Tu respuesta: ";
-                                                            getline(cin, resp);
-                                                            if (resp == e->getRespuesta()) {
+                                                            do {
+                                                                cout << "Tu respuesta: ";
+                                                                getline(cin, resp);
+                                                                if (resp.empty()) {
+                                                                    cout << "No puedes dejar la respuesta vacía. Intenta de nuevo." << endl;
+                                                                } else if (resp == "#") {
+                                                                    break;
+                                                                }
+                                                            } while (resp.empty());
+
+                                                            if (resp == "#") {
+                                                                break; // salir del bucle de ejercicios
+                                                            } else if (e->validarRespuesta(resp,true)) {
                                                                 cout << "Correcto!" << endl;
                                                                 usuario.getHistorial().agregarRespuestaCorrecta();
                                                             } else {
                                                                 cout << "Incorrecto. La respuesta era: " << e->getRespuesta() << endl;
                                                                 usuario.getHistorial().agregarRespuestaIncorrecta();
                                                             }
+
                                                         }
                                                         usuario.getHistorial().calcularPromedio();
+                                                        usuario.getHistorial().guardarHistorial(usuario.getNombre());
                                                         for (auto* e : ejercicios) delete e;
 
                                                     } else if (dificultad == 2) {
                                                         vector<EjercicioLogica*> ejercicios = obtenerEjerciciosIntermedioLogica();
                                                         shuffle(ejercicios.begin(), ejercicios.end(), default_random_engine(chrono::system_clock::now().time_since_epoch().count()));
+                                                        int contador = 1; // Contador para el número de ejercicios
                                                         for (auto* e : ejercicios) {
+                                                            cout << "Ejercicio # " << (contador++) << endl;
                                                             e->mostrarEjercicio();
                                                             string resp;
-                                                            cout << "Tu respuesta: ";
-                                                            getline(cin, resp);
-                                                            if (resp == e->getRespuesta()) {
+                                                            do {
+                                                                cout << "Tu respuesta: ";
+                                                                getline(cin, resp);
+                                                                if (resp.empty()) {
+                                                                    cout << "No puedes dejar la respuesta vacía. Intenta de nuevo." << endl;
+                                                                } else if (resp == "#") {
+                                                                    break;
+                                                                }
+                                                            } while (resp.empty());
+
+                                                            if (resp == "#") {
+                                                                break; // salir del bucle de ejercicios
+                                                            } else if (e->validarRespuesta(resp,true)) {
                                                                 cout << "Correcto!" << endl;
                                                                 usuario.getHistorial().agregarRespuestaCorrecta();
                                                             } else {
                                                                 cout << "Incorrecto. La respuesta era: " << e->getRespuesta() << endl;
                                                                 usuario.getHistorial().agregarRespuestaIncorrecta();
                                                             }
+
                                                         }
                                                         usuario.getHistorial().calcularPromedio();
+                                                        usuario.getHistorial().guardarHistorial(usuario.getNombre());
                                                         for (auto* e : ejercicios) delete e;
 
                                                     } else if (dificultad == 3) {
                                                         vector<EjercicioLogica*> ejercicios = obtenerEjerciciosDificilLogica();
                                                         shuffle(ejercicios.begin(), ejercicios.end(), default_random_engine(chrono::system_clock::now().time_since_epoch().count()));
+                                                        int contador = 1; // Contador para el número de ejercicios
                                                         for (auto* e : ejercicios) {
+                                                            cout << "Ejercicio # " << (contador++) << endl;
                                                             e->mostrarEjercicio();
                                                             string resp;
-                                                            cout << "Tu respuesta: ";
-                                                            getline(cin, resp);
-                                                            if (resp == e->getRespuesta()) {
+                                                            do {
+                                                                cout << "Tu respuesta: ";
+                                                                getline(cin, resp);
+                                                                if (resp.empty()) {
+                                                                    cout << "No puedes dejar la respuesta vacía. Intenta de nuevo." << endl;
+                                                                } else if (resp == "#") {
+                                                                    break;
+                                                                }
+                                                            } while (resp.empty());
+
+                                                            if (resp == "#") {
+                                                                break; // salir del bucle de ejercicios
+                                                            } else if (e->validarRespuesta(resp,true)) {
                                                                 cout << "Correcto!" << endl;
                                                                 usuario.getHistorial().agregarRespuestaCorrecta();
                                                             } else {
                                                                 cout << "Incorrecto. La respuesta era: " << e->getRespuesta() << endl;
                                                                 usuario.getHistorial().agregarRespuestaIncorrecta();
                                                             }
+
                                                         }
                                                         usuario.getHistorial().calcularPromedio();
+                                                        usuario.getHistorial().guardarHistorial(usuario.getNombre());
                                                         for (auto* e : ejercicios) delete e;
                                                     }
 
                                                 } else if (tipoEjercicio == 3) {
+                                                    int contador = 1; // Contador para el número de ejercicios
                                                     cout << "Ejercicios Combinados" << endl;
                                                     cout << "Dificultad" << endl;
                                                     cout << "1. Facil" << endl;
@@ -547,36 +685,61 @@ int main(){
                                                     
                                                         
                                                     }
-
+                                                   
                                                     for (auto* e : ejerciciosAritmetica) {
+                                                        cout << "Ejercicio # " << (contador++) << endl;
                                                         e->mostrarEjercicio();
                                                         string resp;
-                                                        cout << "Tu respuesta: ";
-                                                        getline(cin, resp);
-                                                        if (resp == e->getRespuesta()) {
-                                                            cout << "Correcto!" << endl;
-                                                            usuario.getHistorial().agregarRespuestaCorrecta();
-                                                        } else {
-                                                            cout << "Incorrecto. La respuesta era: " << e->getRespuesta() << endl;
-                                                            usuario.getHistorial().agregarRespuestaIncorrecta();
-                                                        }
-                                                    }
+                                                        do {
+                                                            cout << "Tu respuesta: ";
+                                                            getline(cin, resp);
+                                                            if (resp.empty()) {
+                                                                cout << "No puedes dejar la respuesta vacía. Intenta de nuevo." << endl;
+                                                            } else if (resp == "#") {
+                                                                break;
+                                                            }
+                                                        } while (resp.empty());
 
-                                                    for (auto* e : ejerciciosLogica) {
-                                                        e->mostrarEjercicio();
-                                                        string resp;
-                                                        cout << "Tu respuesta: ";
-                                                        getline(cin, resp);
-                                                        if (resp == e->getRespuesta()) {
+                                                        if (resp == "#") {
+                                                            break; // salir del bucle de ejercicios
+                                                        } else if (e->validarRespuesta(resp)) {
                                                             cout << "Correcto!" << endl;
                                                             usuario.getHistorial().agregarRespuestaCorrecta();
                                                         } else {
                                                             cout << "Incorrecto. La respuesta era: " << e->getRespuesta() << endl;
                                                             usuario.getHistorial().agregarRespuestaIncorrecta();
                                                         }
+
+                                                    }
+                                                    
+                                                    for (auto* e : ejerciciosLogica) {
+                                                        cout << "Ejercicio # " << (contador++) << endl;
+                                                        e->mostrarEjercicio();
+                                                        string resp;
+                                                        do {
+                                                            cout << "Tu respuesta: ";
+                                                            getline(cin, resp);
+                                                            if (resp.empty()) {
+                                                                cout << "No puedes dejar la respuesta vacía. Intenta de nuevo." << endl;
+                                                            } else if (resp == "#") {
+                                                                break;
+                                                            }
+                                                        } while (resp.empty());
+
+                                                        if (resp == "#") {
+                                                            break; // salir del bucle de ejercicios
+                                                        } else if (e->validarRespuesta(resp,true)) {
+                                                            cout << "Correcto!" << endl;
+                                                            usuario.getHistorial().agregarRespuestaCorrecta();
+                                                        } else {
+                                                            cout << "Incorrecto. La respuesta era: " << e->getRespuesta() << endl;
+                                                            usuario.getHistorial().agregarRespuestaIncorrecta();
+                                                        }
+
                                                     }
 
                                                     usuario.getHistorial().calcularPromedio();
+                                                    usuario.getHistorial().guardarHistorial(usuario.getNombre());
                                                     for (auto* e : ejerciciosAritmetica) delete e;
                                                     for (auto* e : ejerciciosLogica) delete e;
 
@@ -588,12 +751,14 @@ int main(){
                                                 }       
 
                                                 case 2:
-                                                    cout << "Historial" << endl;
-                                                    cout << "Nombre: " << usuario.getNombre() << endl;
-                                                    cout << "Respuestas correctas: " << usuario.getHistorial().getRespuestasCorrectas() << endl;
-                                                    cout << "Respuestas incorrectas: " << usuario.getHistorial().getRespuestasIncorrectas() << endl;
-                                                    cout << "Promedio: " << usuario.getHistorial().getPromedio() << "%" << endl;
-                                                    break;
+                                                cout << "Historial" << endl;
+                                                cout << "Nombre de usuario: " << usuario.getNombre() << endl;
+                                                cout << "Respuestas correctas: " << usuario.getHistorial().getRespuestasCorrectas() << endl;
+                                                cout << "Respuestas incorrectas: " << usuario.getHistorial().getRespuestasIncorrectas() << endl;
+                                                cout << "Promedio: " << usuario.getHistorial().getPromedio() << "%" << endl;
+
+                                                                                                 
+                                            
                                                 case 3:
                                                     // Salir
                                                     break;
